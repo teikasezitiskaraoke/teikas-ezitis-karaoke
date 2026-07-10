@@ -89,7 +89,7 @@ const PASSWORD = "januvakars"; // ----------------------------------------------
 let songs = [];
 
 async function loadSongs() {
-    const response = await fetch("songs.csv");
+    const response = await fetch("songs.csv?v=" + Date.now());
     const text = await response.text();
 
     songs = text
