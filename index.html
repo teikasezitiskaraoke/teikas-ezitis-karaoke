@@ -210,19 +210,26 @@ function toggleFavoritesView() {
 }
 
 function filterSongs() {
-    const q = document.getElementById("search").value
-        .toLocaleLowerCase();
+    const normalize = text =>
+        text
+            .normalize("NFC")
+            .toLocaleLowerCase("lv")
+            .trim()
+            .replace(/\s+/g, " ");
+
+    const q = normalize(document.getElementById("search").value);
 
     const source = showingFavorites
         ? songs.filter(song => favorites.has(song))
         : songs;
 
     const filtered = source.filter(song =>
-        song.toLocaleLowerCase().includes(q)
+        normalize(song).includes(q)
     );
 
     renderSongs(filtered);
 }
+
 </script>
 
 </body>
