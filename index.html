@@ -52,9 +52,28 @@ button {
     font-size:22px;
     padding:16px;
 }
+
 .song {
-    padding:8px 12px;
-    border-bottom:1px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #333;
+}
+
+.fav-btn {
+    width: auto;
+    padding: 5px 10px;
+    background: transparent;
+    color: #aaa;
+    font-size: 22px;
+    border: none;
+    cursor: pointer;
+}
+
+.fav-btn.active {
+    color: #ffb300;
 }
 .counter {
     margin:15px 0;
@@ -77,6 +96,9 @@ button {
 <div id="app">
     <h1>🎤 Teikas Ezīša Karaoke</h1>
     <input id="search" placeholder="Meklēt dziesmu..." oninput="filterSongs()">
+    <button id="favoritesToggle" onclick="toggleFavoritesView()">
+    ⭐ Mani favorīti
+</button>
     <div class="counter" id="counter"></div>
     <div id="songs"></div>
 </div>
@@ -116,16 +138,89 @@ function login() {
     }
 }
 
+
+let favorites = new Set(
+    JSON.parse(localStorage.getItem("teikasKaraokeFavorites") || "[]")
+);
+
+let showingFavorites = false;
+
+function escapeHtml(value) {
+    return value.replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+function saveFavorites() {
+    localStorage.setItem(
+        "teikasKaraokeFavorites",
+        JSON.stringify([...favorites])
+    );
+}
+
 function renderSongs(list) {
-    const container = document.getElementById('songs');
-    container.innerHTML = list.map(s => `<div class="song">${s}</div>`).join('');
-    document.getElementById('counter').textContent =
+    const container = document.getElementById("songs");
+
+    container.innerHTML = list.map(song => {
+        const safeSong = escapeHtml(song);
+        const active = favorites.has(song);
+
+        return `
+            <div class="song">
+                <span>${safeSong}</span>
+                <button
+                    class="fav-btn ${active ? "active" : ""}"
+                    data-song="${safeSong}"
+                    onclick="toggleFavorite(this)"
+                    aria-label="Pievienot vai noņemt favorītu"
+                    title="Pievienot vai noņemt favorītu"
+                >${active ? "★" : "☆"}</button>
+            </div>
+        `;
+    }).join("");
+
+    document.getElementById("counter").textContent =
         "Atrastas " + list.length + " dziesmas";
 }
 
+function toggleFavorite(button) {
+    const song = button.dataset.song;
+
+    if (favorites.has(song)) {
+        favorites.delete(song);
+    } else {
+        favorites.add(song);
+    }
+
+    saveFavorites();
+    filterSongs();
+}
+
+function toggleFavoritesView() {
+    showingFavorites = !showingFavorites;
+
+    document.getElementById("favoritesToggle").textContent =
+        showingFavorites ? "🎵 Visas dziesmas" : "⭐ Mani favorīti";
+
+    filterSongs();
+}
+
 function filterSongs() {
-    const q = document.getElementById('search').value.toLowerCase();
-    const filtered = songs.filter(s => s.toLowerCase().includes(q));
+    const q = document.getElementById("search").value
+        .toLocaleLowerCase();
+
+    const source = showingFavorites
+        ? songs.filter(song => favorites.has(song))
+        : songs;
+
+    const filtered = source.filter(song =>
+        song.toLocaleLowerCase().includes(q)
+    );
+
     renderSongs(filtered);
 }
 </script>
